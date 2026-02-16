@@ -3,13 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAVE NOTE</title>
+    <title>SAVE NOTE - Final Fix</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="style.css">
-
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg: #fdf6f0;       
+            --primary: #e29578;        
+            --primary-hover: #d08c75;
+            --secondary: #ffcdb2;      
+            --text: #4a4e69;      
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(226, 149, 120, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Gill Sans', sans-serif; }
+        body { background-color: var(--bg); min-height: 100vh; color: var(--text); }
+        .hidden { display: none !important; }
+
+        /* --- AUTH SCREEN --- */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(253, 246, 240, 0.98); /* High opacity to hide app */
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .auth-box {
+            background: var(--white); padding: 40px; width: 90%; max-width: 350px;
+            border-radius: 24px; box-shadow: var(--shadow);
+            text-align: center; border: 1px solid var(--secondary);
+        }
+        .auth-box i { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
+        .auth-box input {
+            width: 100%; padding: 14px; margin: 10px 0;
+            border: 2px solid var(--secondary); border-radius: 12px;
+            outline: none; font-size: 1rem;
+        }
+        
+        /* ERROR MESSAGE BOX (Replaces Popup) */
+        #error-box {
+            background: #ffe5d9; color: #d90429; 
+            padding: 10px; border-radius: 8px; font-size: 0.9rem;
+            margin: 10px 0; display: none; border: 1px solid #d90429;
+        }
+
+        #auth-btn {
+            width: 100%; padding: 14px; background: var(--primary);
+            color: white; border: none; border-radius: 12px;
+            font-size: 1.1rem; font-weight: bold; margin-top: 5px; cursor: pointer;
+        }
+        #auth-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .switch-link { margin-top: 20px; font-size: 0.9rem; cursor: pointer; color: var(--text); text-decoration: underline; }
+
+        /* --- NAVBAR & DROPDOWN --- */
+        #main-app { display: none; } /* Hidden until login */
+        
+        #navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 30px; background: transparent;
+        }
+        .logo { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+
+        .user-menu { position: relative; }
+        
+        /* Avatar Circle */
+        .avatar {
+            width: 45px; height: 45px; background: var(--primary);
+            color: white; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 1.2rem; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .avatar:hover { transform: scale(1.1); }
+
+        /* Dropdown Menu */
+        .dropdown-menu {
+            position: absolute; top: 55px; right: 0;
+            background: white; padding: 15px; border-radius: 12px;
+            width: 240px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 1px solid var(--secondary);
+            display: none; /* Hidden by default */
+            z-index: 100;
+        }
+        .dropdown-menu.show { display: block; animation: fadeIn 0.2s ease; }
+        
+        #user-email-display {
+            font-size: 0.9rem; color: #666; margin-bottom: 12px;
+            padding-bottom: 12px; border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+        #logout-btn {
+            width: 100%; background: #fff0f0; color: #d90429;
+            border: none; padding: 10px; border-radius: 8px;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+        }
+        #logout-btn:hover { background: #ffdede; }
+
+        /* --- INPUT AREA --- */
+        .input-container { display: flex; justify-content: center; padding: 20px; }
+        .notebook-input {
+            width: 100%; max-width: 600px; background: var(--white);
+            padding: 20px; border-radius: 20px; box-shadow: var(--shadow);
+            border: 1px solid var(--secondary);
+        }
+        textarea {
+            width: 100%; height: 80px; border: none; resize: none;
+            font-size: 1.1rem; color: var(--text); outline: none;
+            background: transparent; margin-bottom: 10px;
+        }
+        #save-btn {
+            float: right; background: var(--primary); color: white; border: none;
+            padding: 10px 25px; border-radius: 50px; font-weight: bold;
+            display: flex; align-items: center; gap: 5px; cursor: pointer;
+        }
+
+        /* --- NOTES GRID --- */
+        #notes-grid {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px;
+        }
+        .note-card {
+            width: 300px; background: var(--white); padding: 25px;
+            border-radius: 18px; box-shadow: var(--shadow);
+            border-top: 5px solid var(--secondary);
+            display: flex; flex-direction: column;
+        }
+        
+        /* --- FIX FOR LONG TEXT --- */
+        .note-text {
+            font-size: 1.1rem; line-height: 1.6; color: var(--text);
+            white-space: pre-wrap; margin-bottom: 15px;
+            /* These 3 lines create the scrollbar */
+            max-height: 200px; 
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        
+        .note-footer {
+            margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            color: #aaa; font-size: 0.85rem;
+        }
+        .delete-icon { cursor: pointer; color: var(--primary); font-size: 1.2rem; }
+        .delete-icon:hover { color: #d90429; transform: scale(1.2); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
 
@@ -22,7 +165,7 @@
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             
-            <p id="auth-error" class="error-msg"></p>
+            <div id="error-box"></div>
 
             <button id="auth-btn">Log In</button>
             <p class="switch-link" id="toggle-auth">I need to create an account</p>
@@ -36,10 +179,10 @@
                 <span>SaveNote</span>
             </div>
             
-            <div class="user-menu-container">
-                <div class="avatar" id="user-avatar">U</div>
+            <div class="user-menu">
+                <div class="avatar" id="user-avatar" title="Click for Menu">U</div>
                 
-                <div id="profile-dropdown" class="dropdown hidden">
+                <div class="dropdown-menu" id="dropdown">
                     <p id="user-email-display">user@email.com</p>
                     <button id="logout-btn">
                         <i class="ri-logout-box-r-line"></i> Logout
@@ -58,6 +201,155 @@
         <div id="notes-grid"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // 1. CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwt0DhSHWkQUHMFrcanpDg9270v8IcpV8",
+            authDomain: "save-note-146ec.firebaseapp.com",
+            projectId: "save-note-146ec",
+            storageBucket: "save-note-146ec.firebasestorage.app",
+            messagingSenderId: "1015048681656",
+            appId: "1:1015048681656:web:ebff97743021c3dd65dc4d",
+            measurementId: "G-VEMRQ2Y53E"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let isLogin = true;
+
+        // --- DOM ELEMENTS ---
+        const authOverlay = document.getElementById("auth-overlay");
+        const mainApp = document.getElementById("main-app");
+        const authBtn = document.getElementById("auth-btn");
+        const toggleBtn = document.getElementById("toggle-auth");
+        const title = document.getElementById("auth-title");
+        const errorBox = document.getElementById("error-box");
+        const dropdown = document.getElementById("dropdown");
+        const avatar = document.getElementById("user-avatar");
+
+        // --- AUTH LOGIC ---
+        toggleBtn.addEventListener("click", () => {
+            isLogin = !isLogin;
+            title.innerText = isLogin ? "Welcome Back" : "Join Us";
+            authBtn.innerText = isLogin ? "Log In" : "Sign Up";
+            toggleBtn.innerText = isLogin ? "I need to create an account" : "I already have an account";
+            errorBox.style.display = "none"; // Hide errors on toggle
+        });
+
+        // Handle Login/Signup Click
+        authBtn.addEventListener("click", () => {
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            
+            errorBox.style.display = "none"; // Clear previous errors
+
+            if (isLogin) {
+                auth.signInWithEmailAndPassword(email, pass).catch(handleError);
+            } else {
+                auth.createUserWithEmailAndPassword(email, pass).catch(handleError);
+            }
+        });
+
+        // Custom Error Handler (NO POPUPS)
+        function handleError(error) {
+            let msg = error.message;
+            // Make messages friendly
+            if(msg.includes("auth/wrong-password")) msg = "Incorrect password. Please try again.";
+            if(msg.includes("auth/user-not-found")) msg = "No account found with this email.";
+            if(msg.includes("auth/email-already-in-use")) msg = "This email is already taken.";
+            if(msg.includes("auth/invalid-email")) msg = "Please enter a valid email.";
+            
+            errorBox.innerText = msg;
+            errorBox.style.display = "block";
+        }
+
+        // --- LOGIN STATE MONITOR ---
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                authOverlay.style.display = "none";
+                mainApp.style.display = "block";
+                
+                // Set Avatar Initials
+                const initial = user.email.charAt(0).toUpperCase();
+                document.getElementById("user-avatar").innerText = initial;
+                document.getElementById("user-email-display").innerText = user.email;
+
+                loadNotes(user.uid);
+            } else {
+                authOverlay.style.display = "flex";
+                mainApp.style.display = "none";
+            }
+        });
+
+        // --- AVATAR DROPDOWN LOGIC ---
+        avatar.addEventListener("click", (e) => {
+            e.stopPropagation(); // Stop click from reaching body
+            dropdown.classList.toggle("show");
+        });
+
+        // Close dropdown when clicking outside
+        document.body.addEventListener("click", () => {
+            dropdown.classList.remove("show");
+        });
+
+        document.getElementById("logout-btn").addEventListener("click", () => {
+            auth.signOut();
+            window.location.reload();
+        });
+
+        // --- SAVE NOTE ---
+        document.getElementById("save-btn").addEventListener("click", () => {
+            const text = document.getElementById("note-text").value;
+            const user = auth.currentUser;
+            if (!text.trim() || !user) return;
+
+            db.collection("notes").add({
+                text: text,
+                uid: user.uid,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById("note-text").value = "";
+            });
+        });
+
+        // --- LOAD NOTES ---
+        function loadNotes(uid) {
+            db.collection("notes")
+              .where("uid", "==", uid)
+              .onSnapshot((snapshot) => {
+                  const grid = document.getElementById("notes-grid");
+                  grid.innerHTML = ""; 
+
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const noteId = doc.id;
+                      
+                      let dateStr = "Just now";
+                      if (data.timestamp) {
+                          dateStr = data.timestamp.toDate().toLocaleDateString("en-US", { month: 'short', day: 'numeric' });
+                      }
+
+                      const card = document.createElement("div");
+                      card.className = "note-card";
+                      card.innerHTML = `
+                        <div class="note-text">${data.text}</div>
+                        <div class="note-footer">
+                            <span>${dateStr}</span>
+                            <i class="ri-delete-bin-line delete-icon" onclick="deleteNote('${noteId}')"></i>
+                        </div>
+                      `;
+                      grid.appendChild(card);
+                  });
+              });
+        }
+
+        window.deleteNote = function(id) {
+            if(confirm("Delete this memory?")) {
+                db.collection("notes").doc(id).delete();
+            }
+        }
+    </script>
 </body>
 </html>
