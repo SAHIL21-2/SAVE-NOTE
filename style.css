@@ -1,4 +1,3 @@
-/* --- ROMANTIC THEME --- */
 :root {
     --bg: #fdf6f0;       
     --primary: #e29578;        
@@ -11,10 +10,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; }
 body { background-color: var(--bg); min-height: 100vh; color: var(--text); }
-
-/* --- BUTTONS --- */
-button { transition: all 0.3s ease; cursor: pointer; }
-button:active { transform: scale(0.95); }
+.hidden { display: none !important; }
 
 /* --- AUTH SCREEN --- */
 #auth-overlay {
@@ -35,39 +31,61 @@ button:active { transform: scale(0.95); }
     outline: none; font-size: 1rem;
 }
 .auth-box input:focus { border-color: var(--primary); }
+
+/* ERROR MESSAGE STYLE */
+.error-msg {
+    color: #d90429; font-size: 0.9rem; margin: 10px 0;
+    background: #ffe5d9; padding: 10px; border-radius: 8px;
+    display: none; /* Hidden by default */
+}
+
 #auth-btn {
     width: 100%; padding: 14px; background: var(--primary);
     color: white; border: none; border-radius: 12px;
-    font-size: 1.1rem; font-weight: bold; margin-top: 10px;
+    font-size: 1.1rem; font-weight: bold; margin-top: 5px; cursor: pointer;
 }
 #auth-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
 .switch-link { margin-top: 20px; font-size: 0.9rem; cursor: pointer; color: var(--text); text-decoration: underline; }
 
-/* --- MAIN APP --- */
-#main-app { display: none; } 
-
-/* Navbar */
+/* --- NAVBAR & DROPDOWN --- */
 #navbar {
     display: flex; justify-content: space-between; align-items: center;
     padding: 20px 30px; background: transparent;
 }
 .logo { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
 
-.user-menu { display: flex; align-items: center; gap: 15px; }
+.user-menu-container { position: relative; }
+
 .avatar {
-    width: 40px; height: 40px; background: var(--primary);
+    width: 45px; height: 45px; background: var(--primary);
     color: white; border-radius: 50%;
     display: flex; justify-content: center; align-items: center;
-    font-weight: bold; font-size: 1.2rem;
+    font-weight: bold; font-size: 1.2rem; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s;
+}
+.avatar:hover { transform: scale(1.1); }
+
+/* The Dropdown Menu */
+.dropdown {
+    position: absolute; top: 55px; right: 0;
+    background: white; padding: 15px; border-radius: 12px;
+    width: 220px; box-shadow: var(--shadow);
+    border: 1px solid var(--secondary);
+    animation: fadeIn 0.2s ease;
+    z-index: 100;
+}
+#user-email-display {
+    font-size: 0.9rem; color: #888; margin-bottom: 10px;
+    word-wrap: break-word; border-bottom: 1px solid #eee; padding-bottom: 10px;
 }
 #logout-btn {
-    background: white; border: 1px solid var(--primary); color: var(--primary);
-    padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
-    font-weight: bold; font-size: 0.9rem;
+    width: 100%; background: #fff0f0; color: #d90429;
+    border: none; padding: 10px; border-radius: 8px;
+    font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
 }
-#logout-btn:hover { background: var(--primary); color: white; }
+#logout-btn:hover { background: #ffdede; }
 
-/* Input Area */
+/* --- INPUT & NOTES --- */
 .input-container { display: flex; justify-content: center; padding: 20px; }
 .notebook-input {
     width: 100%; max-width: 600px; background: var(--white);
@@ -82,27 +100,36 @@ textarea {
 #save-btn {
     float: right; background: var(--primary); color: white; border: none;
     padding: 10px 25px; border-radius: 50px; font-weight: bold;
-    display: flex; align-items: center; gap: 5px;
+    display: flex; align-items: center; gap: 5px; cursor: pointer;
 }
-#save-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
 
-/* Notes Grid */
+/* --- NOTES GRID (FIXED LONG TEXT) --- */
 #notes-grid {
     display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px;
 }
 .note-card {
     width: 300px; background: var(--white); padding: 25px;
     border-radius: 18px; box-shadow: var(--shadow);
-    border-top: 5px solid var(--secondary); position: relative;
-    animation: popIn 0.5s ease;
+    border-top: 5px solid var(--secondary);
+    display: flex; flex-direction: column;
 }
-.note-text { font-size: 1.1rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; margin-bottom: 20px; }
+/* This fixes the long text issue! */
+.note-text {
+    font-size: 1.1rem; line-height: 1.6; color: var(--text);
+    white-space: pre-wrap; margin-bottom: 15px;
+    max-height: 250px;       /* Limit height */
+    overflow-y: auto;        /* Add scrollbar if text is too long */
+}
+/* Scrollbar styling for the note */
+.note-text::-webkit-scrollbar { width: 6px; }
+.note-text::-webkit-scrollbar-thumb { background-color: var(--secondary); border-radius: 10px; }
+
 .note-footer {
-    border-top: 1px solid #f0f0f0; padding-top: 15px;
+    margin-top: auto; border-top: 1px solid #f0f0f0; padding-top: 10px;
     display: flex; justify-content: space-between; align-items: center;
     color: #aaa; font-size: 0.85rem;
 }
-.delete-icon { cursor: pointer; color: var(--primary); font-size: 1.2rem; transition: 0.2s; }
+.delete-icon { cursor: pointer; color: var(--primary); font-size: 1.2rem; }
 .delete-icon:hover { color: #d90429; transform: scale(1.2); }
 
-@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
