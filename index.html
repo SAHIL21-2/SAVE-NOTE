@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SaveNote | Private Cloud Diary</title>
+    <title>SaveNote | Cloud Diary</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
-
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -15,17 +14,17 @@
 
     <div id="auth-overlay">
         <div class="auth-box">
-            <i class="ri-heart-3-fill auth-heart"></i>
+            <i class="ri-shield-keyhole-fill auth-icon"></i>
             <h2 id="auth-title">Welcome Back</h2>
-            <p id="auth-subtitle">Sign in to sync your memories.</p>
-            
-            <div id="auth-error-container" class="error-box hidden"></div>
-
+            <div id="auth-status-container" class="status-box hidden"></div>
             <div class="input-group">
+                <input type="text" id="user-name" placeholder="Full Name" class="hidden">
                 <input type="email" id="email" placeholder="Email Address">
                 <input type="password" id="password" placeholder="Password (6+ characters)">
             </div>
-
+            <div id="forgot-pass-wrap" class="forgot-wrap">
+                <span id="forgot-password-link" class="small-link">Forgot Password?</span>
+            </div>
             <button id="auth-btn">Log In</button>
             <p class="switch-link" id="toggle-auth">New here? Create an account</p>
         </div>
@@ -33,29 +32,33 @@
 
     <div id="main-app" class="hidden">
         <nav id="navbar">
-            <div class="logo">
-                <i class="ri-book-heart-fill"></i>
-                <span>SaveNote</span>
-            </div>
+            <div class="logo"><i class="ri-sticky-note-fill"></i> <span>SaveNote</span></div>
             
-            <div class="profile-container">
-                <div class="avatar" id="avatar-btn">S</div>
-                <div id="avatar-menu" class="dropdown-menu hidden">
-                    <p id="user-display-email">user@email.com</p>
-                    <button id="logout-btn">
-                        <i class="ri-logout-circle-r-line"></i> Log Out
-                    </button>
+            <div class="search-container">
+                <i class="ri-search-line"></i>
+                <input type="text" id="search-input" placeholder="Search memories...">
+            </div>
+
+            <div class="nav-controls">
+                <i class="ri-moon-line theme-icon" id="theme-toggle"></i>
+                <div class="profile-container">
+                    <div class="avatar" id="avatar-btn">?</div>
+                    <div id="avatar-menu" class="dropdown-menu hidden">
+                        <h4 id="user-display-name">User Name</h4>
+                        <p id="user-display-email">user@email.com</p>
+                        <button id="logout-btn" class="menu-item logout">
+                            <i class="ri-logout-box-r-line"></i> Log Out
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>
 
         <section class="editor-section">
             <div class="editor-card">
-                <textarea id="note-input" placeholder="What's on your mind today?"></textarea>
+                <textarea id="note-input" placeholder="Title: First Line&#10;Memory: Rest of the text..."></textarea>
                 <div class="editor-footer">
-                    <button id="save-note-btn">
-                        <i class="ri-quill-pen-line"></i> Save Note
-                    </button>
+                    <button id="save-note-btn">Save Memory</button>
                 </div>
             </div>
         </section>
@@ -65,10 +68,8 @@
 
     <div id="view-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <header class="modal-header">
-                <span id="modal-date">Date</span>
-                <i class="ri-close-line close-modal" id="close-modal"></i>
-            </header>
+            <span class="close-modal" id="close-view-modal">&times;</span>
+            <div id="modal-date" class="modal-date"></div>
             <div id="modal-body"></div>
         </div>
     </div>
