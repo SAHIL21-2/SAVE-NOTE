@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAVE NOTE - Secure</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>Welcome Back</h2>
+            <p>Sign in to access your secret notes.</p>
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password">
+            <div class="auth-buttons">
+                <button id="login-btn">Log In</button>
+                <button id="signup-btn" class="secondary">Sign Up</button>
+            </div>
+            <p id="auth-msg"></p>
+        </div>
+    </div>
+
+    <div id="main-app" style="display: none;">
+        <div id="header">
+            <div id="logo">
+                <i class="ri-booklet-fill"></i>
+                <h2>SAVE NOTE</h2>
+            </div>
+            <div id="user-info">
+                <span id="user-email">user@email.com</span>
+                <button id="logout-btn">Log Out</button>
+            </div>
+        </div>
+
+        <div id="input-section">
+            <div id="input-box">
+                <textarea id="note-text" placeholder="Write your romantic thoughts here..."></textarea>
+                <button id="add-btn">
+                    <i class="ri-save-3-line"></i> Save to Cloud
+                </button>
+            </div>
+        </div>
+
+        <div id="notes-container">
+            </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
