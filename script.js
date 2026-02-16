@@ -1,4 +1,4 @@
-// 1. CONFIGURATION
+// --- 1. FIREBASE INITIALIZATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyAwt0DhSHWkQUHMFrcanpDg9270v8IcpV8",
     authDomain: "save-note-146ec.firebaseapp.com",
@@ -13,144 +13,122 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-let isLogin = true;
-
-// --- DOM ELEMENTS ---
+// --- 2. DOM ELEMENTS ---
 const authOverlay = document.getElementById("auth-overlay");
 const mainApp = document.getElementById("main-app");
 const authBtn = document.getElementById("auth-btn");
-const toggleBtn = document.getElementById("toggle-auth");
-const title = document.getElementById("auth-title");
-const errorBox = document.getElementById("auth-error");
+const toggleAuth = document.getElementById("toggle-auth");
+const errorBox = document.getElementById("auth-error-container");
+const avatarBtn = document.getElementById("avatar-btn");
+const avatarMenu = document.getElementById("avatar-menu");
+const viewModal = document.getElementById("view-modal");
 
-// Toggle Login/Signup Mode
-toggleBtn.addEventListener("click", () => {
-    isLogin = !isLogin;
-    title.innerText = isLogin ? "Welcome Back" : "Join Us";
-    authBtn.innerText = isLogin ? "Log In" : "Sign Up";
-    toggleBtn.innerText = isLogin ? "I need to create an account" : "I already have an account";
-    errorBox.style.display = "none"; // Hide error when switching
-});
+let isLoginMode = true;
 
-// --- HELPER: SHOW ERROR ---
-function showError(msg) {
-    // Translate common Firebase errors to human language
-    if(msg.includes("auth/invalid-email")) msg = "Please enter a valid email address.";
-    if(msg.includes("auth/wrong-password")) msg = "Incorrect password.";
-    if(msg.includes("auth/user-not-found")) msg = "No account found with this email.";
-    if(msg.includes("auth/email-already-in-use")) msg = "That email is already registered.";
-    
-    errorBox.innerText = msg;
-    errorBox.style.display = "block"; // Show the red box
-}
+// --- 3. AUTHENTICATION LOGIC ---
 
-// --- AUTH ACTION ---
-authBtn.addEventListener("click", () => {
+toggleAuth.onclick = () => {
+    isLoginMode = !isLoginMode;
+    document.getElementById("auth-title").innerText = isLoginMode ? "Welcome Back" : "Join Us";
+    authBtn.innerText = isLoginMode ? "Log In" : "Sign Up";
+    toggleAuth.innerText = isLoginMode ? "New here? Create an account" : "Already have an account? Log in";
+    errorBox.classList.add("hidden");
+};
+
+authBtn.onclick = () => {
     const email = document.getElementById("email").value;
     const pass = document.getElementById("password").value;
-    
-    errorBox.style.display = "none"; // Reset error
+    errorBox.classList.add("hidden");
 
-    if (isLogin) {
-        auth.signInWithEmailAndPassword(email, pass).catch(e => showError(e.code || e.message));
-    } else {
-        auth.createUserWithEmailAndPassword(email, pass).catch(e => showError(e.code || e.message));
+    if (!email || pass.length < 6) {
+        showError("Please enter a valid email and 6+ char password.");
+        return;
     }
-});
 
-// --- AVATAR DROPDOWN LOGIC ---
-const avatar = document.getElementById("user-avatar");
-const dropdown = document.getElementById("profile-dropdown");
+    const authAction = isLoginMode 
+        ? auth.signInWithEmailAndPassword(email, pass) 
+        : auth.createUserWithEmailAndPassword(email, pass);
 
-// Toggle menu when clicking avatar
-avatar.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent click from bubbling to document
-    dropdown.classList.toggle("hidden");
-});
+    authAction.catch(err => showError(err.message));
+};
 
-// Close menu if clicking anywhere else
-document.addEventListener("click", () => {
-    if (!dropdown.classList.contains("hidden")) {
-        dropdown.classList.add("hidden");
-    }
-});
+function showError(msg) {
+    errorBox.innerText = msg;
+    errorBox.classList.remove("hidden");
+}
 
-// Stop menu closing when clicking inside it
-dropdown.addEventListener("click", (e) => e.stopPropagation());
-
-
-// --- LOGIN STATE MONITOR ---
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(user => {
     if (user) {
-        authOverlay.style.display = "none";
-        mainApp.style.display = "block";
-
-        // Update Avatar & Email Display
-        document.getElementById("user-avatar").innerText = user.email.charAt(0).toUpperCase();
-        document.getElementById("user-email-display").innerText = user.email;
-
-        loadNotes(user.uid);
+        authOverlay.classList.add("hidden");
+        mainApp.classList.remove("hidden");
+        avatarBtn.innerText = user.email.charAt(0).toUpperCase();
+        document.getElementById("user-display-email").innerText = user.email;
+        fetchNotes(user.uid);
     } else {
-        authOverlay.style.display = "flex";
-        mainApp.style.display = "none";
+        authOverlay.classList.remove("hidden");
+        mainApp.classList.add("hidden");
     }
 });
 
-// LOGOUT
-document.getElementById("logout-btn").addEventListener("click", () => {
-    auth.signOut();
-    window.location.reload();
-});
+// Avatar Dropdown Toggle
+avatarBtn.onclick = (e) => { e.stopPropagation(); avatarMenu.classList.toggle("hidden"); };
+window.onclick = () => avatarMenu.classList.add("hidden");
+document.getElementById("logout-btn").onclick = () => auth.signOut();
 
-// --- SAVE NOTE ---
-document.getElementById("save-btn").addEventListener("click", () => {
-    const text = document.getElementById("note-text").value;
-    const user = auth.currentUser;
-    if (!text.trim() || !user) return;
+// --- 4. NOTE OPERATIONS ---
+
+document.getElementById("save-note-btn").onclick = () => {
+    const text = document.getElementById("note-input").value;
+    if (!text.trim()) return;
 
     db.collection("notes").add({
         text: text,
-        uid: user.uid,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        uid: auth.currentUser.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        document.getElementById("note-text").value = "";
+        document.getElementById("note-input").value = "";
     });
-});
+};
 
-// --- LOAD NOTES ---
-function loadNotes(uid) {
-    db.collection("notes")
-      .where("uid", "==", uid)
-      .onSnapshot((snapshot) => {
-          const grid = document.getElementById("notes-grid");
-          grid.innerHTML = ""; 
-
-          snapshot.forEach(doc => {
-              const data = doc.data();
-              const noteId = doc.id;
-              
-              let dateStr = "Just now";
-              if (data.timestamp) {
-                  dateStr = data.timestamp.toDate().toLocaleDateString("en-US", { month: 'short', day: 'numeric' });
-              }
-
-              const card = document.createElement("div");
-              card.className = "note-card";
-              card.innerHTML = `
-                <div class="note-text">${data.text}</div>
-                <div class="note-footer">
-                    <span>${dateStr}</span>
-                    <i class="ri-delete-bin-line delete-icon" onclick="deleteNote('${noteId}')"></i>
+function fetchNotes(uid) {
+    // Basic query to avoid Index Missing errors
+    db.collection("notes").where("uid", "==", uid).onSnapshot(snap => {
+        const grid = document.getElementById("notes-grid");
+        grid.innerHTML = "";
+        
+        snap.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
+            const date = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : "Pending...";
+            
+            const card = document.createElement("div");
+            card.className = "note-card";
+            card.onclick = () => openModal(data.text, date);
+            card.innerHTML = `
+                <div class="note-preview">${data.text}</div>
+                <div class="note-card-footer">
+                    <span>${date}</span>
+                    <i class="ri-delete-bin-line del-btn" onclick="event.stopPropagation(); deleteNote('${id}')"></i>
                 </div>
-              `;
-              grid.appendChild(card);
-          });
-      });
+            `;
+            grid.appendChild(card);
+        });
+    });
 }
 
-// DELETE NOTE
-window.deleteNote = function(id) {
-    if(confirm("Delete this memory?")) {
+// --- 5. MODAL & DELETE ---
+
+function openModal(text, date) {
+    document.getElementById("modal-body").innerText = text;
+    document.getElementById("modal-date").innerText = date;
+    viewModal.classList.remove("hidden");
+}
+
+document.getElementById("close-modal").onclick = () => viewModal.classList.add("hidden");
+viewModal.onclick = (e) => { if (e.target === viewModal) viewModal.classList.add("hidden"); };
+
+function deleteNote(id) {
+    if (confirm("Permanently delete this memory?")) {
         db.collection("notes").doc(id).delete();
     }
 }
