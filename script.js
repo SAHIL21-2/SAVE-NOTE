@@ -1,13 +1,13 @@
-// --- 1. IMPORTS (The Modern Way) ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+// --- 1. IMPORT FIREBASE (Using the version from your snippet) ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 import { 
     getAuth, 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     signOut, 
     onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { 
     getFirestore, 
     collection, 
@@ -19,9 +19,9 @@ import {
     where, 
     orderBy, 
     serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-// --- 2. CONFIGURATION (Your Specific Data) ---
+// --- 2. YOUR EXACT CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyAwt0DhSHWkQUHMFrcanpDg9270v8IcpV8",
     authDomain: "save-note-146ec.firebaseapp.com",
@@ -38,108 +38,145 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- 3. AUTHENTICATION LOGIC ---
+// --- 3. APP LOGIC ---
 
-// Listen for login state changes
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Logged In
-        document.getElementById("login-overlay").style.display = "none";
-        document.getElementById("main-app").style.display = "block";
-        document.getElementById("user-email").innerText = user.email;
-        loadNotes(user.uid);
+let isLoginMode = true; // Tracks if user is trying to Login or Signup
+
+// Toggle between Login and Signup visual
+document.getElementById("toggle-auth").addEventListener("click", () => {
+    isLoginMode = !isLoginMode;
+    const title = document.getElementById("auth-title");
+    const subtitle = document.getElementById("auth-subtitle");
+    const btn = document.getElementById("auth-action-btn");
+    const toggle = document.getElementById("toggle-auth");
+
+    if (isLoginMode) {
+        title.innerText = "Welcome Back";
+        subtitle.innerText = "Login to access your secret diary.";
+        btn.innerText = "Log In";
+        toggle.innerText = "Create an account";
     } else {
-        // Logged Out
-        document.getElementById("login-overlay").style.display = "flex";
-        document.getElementById("main-app").style.display = "none";
+        title.innerText = "Join Us";
+        subtitle.innerText = "Start your romantic journaling journey.";
+        btn.innerText = "Sign Up";
+        toggle.innerText = "I already have an account";
     }
 });
 
-// Sign Up Event
-document.getElementById("signup-btn").addEventListener("click", () => {
+// Handle the Login/Signup Button Click
+document.getElementById("auth-action-btn").addEventListener("click", async () => {
     const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-    
-    createUserWithEmailAndPassword(auth, email, pass)
-        .catch((error) => {
-            document.getElementById("auth-msg").innerText = error.message;
-        });
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("error-msg");
+
+    try {
+        if (isLoginMode) {
+            await signInWithEmailAndPassword(auth, email, password);
+        } else {
+            await createUserWithEmailAndPassword(auth, email, password);
+        }
+        errorMsg.innerText = ""; // Clear errors
+    } catch (error) {
+        console.error(error);
+        if(error.code === 'auth/email-already-in-use') {
+            errorMsg.innerText = "That email is already taken!";
+        } else if (error.code === 'auth/wrong-password') {
+            errorMsg.innerText = "Incorrect password, try again.";
+        } else {
+            errorMsg.innerText = error.message;
+        }
+    }
 });
 
-// Log In Event
-document.getElementById("login-btn").addEventListener("click", () => {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-
-    signInWithEmailAndPassword(auth, email, pass)
-        .catch((error) => {
-            document.getElementById("auth-msg").innerText = "Error: " + error.message;
-        });
+// Monitor Login Status
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById("auth-overlay").classList.add("hidden");
+        document.getElementById("main-app").classList.remove("hidden");
+        
+        // Update Navbar Info
+        document.getElementById("user-email-display").innerText = user.email;
+        // Set Avatar to First Letter of Email
+        document.getElementById("user-avatar").innerText = user.email.charAt(0).toUpperCase();
+        
+        loadNotes(user.uid);
+    } else {
+        document.getElementById("auth-overlay").classList.remove("hidden");
+        document.getElementById("main-app").classList.add("hidden");
+    }
 });
 
-// Log Out Event
-document.getElementById("logout-btn").addEventListener("click", () => {
-    signOut(auth);
-});
+document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
 
-// --- 4. DATABASE LOGIC (Cloud Firestore) ---
 
-// Add a Note
-document.getElementById("add-btn").addEventListener("click", async () => {
+// --- 4. NOTE FUNCTIONS ---
+
+// Save Note
+document.getElementById("save-btn").addEventListener("click", async () => {
     const text = document.getElementById("note-text").value;
     const user = auth.currentUser;
 
-    if (text.trim() === "") return;
+    if (text.trim() === "") return; // Don't save empty notes
 
     if (user) {
         try {
             await addDoc(collection(db, "notes"), {
                 text: text,
-                uid: user.uid, // This makes it private to this user
+                uid: user.uid,
                 timestamp: serverTimestamp()
             });
-            document.getElementById("note-text").value = ""; // Clear input
+            document.getElementById("note-text").value = ""; // Clear box
         } catch (e) {
-            console.error("Error adding note: ", e);
-            alert("Could not save note. Check console.");
+            console.error("Error saving:", e);
+            alert("Error saving note. Check console.");
         }
     }
 });
 
-// Load Notes (Real-time Listener)
+// Load Notes
 function loadNotes(userId) {
-    const notesRef = collection(db, "notes");
-    // Create a query against the collection
-    const q = query(notesRef, where("uid", "==", userId), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "notes"), where("uid", "==", userId), orderBy("timestamp", "desc"));
 
     onSnapshot(q, (snapshot) => {
-        const container = document.getElementById("notes-container");
-        container.innerHTML = ""; // Clear list to avoid duplicates
+        const grid = document.getElementById("notes-grid");
+        grid.innerHTML = ""; // Clear grid before re-rendering
 
         snapshot.forEach((docSnap) => {
-            const note = docSnap.data();
+            const data = docSnap.data();
             const noteId = docSnap.id;
             
-            // Create HTML Element
+            // Format Time
+            let timeString = "Just now";
+            if(data.timestamp) {
+                timeString = data.timestamp.toDate().toLocaleDateString() + " " + data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+
+            // Create Card HTML
             const card = document.createElement("div");
             card.className = "note-card";
             
-            // Delete Button Logic (We attach the function directly to the element)
-            const deleteBtn = document.createElement("i");
-            deleteBtn.className = "ri-delete-bin-line delete-icon";
-            deleteBtn.onclick = () => deleteNote(noteId);
+            card.innerHTML = `
+                <div class="note-content">${data.text}</div>
+                <div class="note-footer">
+                    <span>${timeString}</span>
+                    <i class="ri-delete-bin-heart-line delete-icon" id="del-${noteId}"></i>
+                </div>
+            `;
 
-            const p = document.createElement("p");
-            p.innerText = note.text;
+            grid.appendChild(card);
 
-            card.appendChild(p);
-            card.appendChild(deleteBtn);
-            container.appendChild(card);
+            // ATTACH DELETE EVENT LISTENER HERE
+            // This waits for the button to be created, then attaches the click action
+            setTimeout(() => {
+                const delBtn = document.getElementById(`del-${noteId}`);
+                if (delBtn) {
+                    delBtn.onclick = async () => {
+                        if(confirm("Delete this memory?")) {
+                            await deleteDoc(doc(db, "notes", noteId));
+                        }
+                    };
+                }
+            }, 100);
         });
     });
-}
-
-// Delete Note Function
-async function deleteNote(noteId) {
-    await deleteDoc(doc(db, "notes", noteId));
 }
