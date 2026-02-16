@@ -1,116 +1,108 @@
-/* --- NATURAL ROMANTIC THEME --- */
+/* --- ROMANTIC THEME --- */
 :root {
-    --bg-color: #fdf6f0;       /* Creamy White */
-    --primary: #e29578;        /* Terra Cotta */
-    --secondary: #ffcdb2;      /* Apricot */
-    --text-dark: #4a4e69;      /* Dark Lavender */
-    --text-light: #9a8c98;     /* Muted Mauve */
+    --bg: #fdf6f0;       
+    --primary: #e29578;        
+    --primary-hover: #d08c75;
+    --secondary: #ffcdb2;      
+    --text: #4a4e69;      
     --white: #ffffff;
     --shadow: 0 10px 30px rgba(226, 149, 120, 0.15);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Gill Sans', sans-serif; }
-body { background-color: var(--bg-color); min-height: 100vh; color: var(--text-dark); }
-.hidden { display: none !important; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Gill Sans', 'Gill Sans MT', sans-serif; }
+body { background-color: var(--bg); min-height: 100vh; color: var(--text); }
+
+/* --- BUTTONS --- */
+button { transition: all 0.3s ease; cursor: pointer; }
+button:active { transform: scale(0.95); }
 
 /* --- AUTH SCREEN --- */
 #auth-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(253, 246, 240, 0.95);
     display: flex; justify-content: center; align-items: center;
     z-index: 1000;
 }
 .auth-box {
-    background: var(--white); padding: 40px; width: 90%; max-width: 380px;
+    background: var(--white); padding: 40px; width: 90%; max-width: 350px;
     border-radius: 24px; box-shadow: var(--shadow);
     text-align: center; border: 1px solid var(--secondary);
 }
-.auth-header i { font-size: 2rem; color: var(--primary); }
+.auth-box i { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
 .auth-box input {
     width: 100%; padding: 14px; margin: 10px 0;
     border: 2px solid var(--secondary); border-radius: 12px;
-    outline: none; transition: 0.3s;
+    outline: none; font-size: 1rem;
 }
 .auth-box input:focus { border-color: var(--primary); }
-#auth-action-btn {
+#auth-btn {
     width: 100%; padding: 14px; background: var(--primary);
     color: white; border: none; border-radius: 12px;
-    font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
+    font-size: 1.1rem; font-weight: bold; margin-top: 10px;
 }
-.switch-mode { margin-top: 15px; font-size: 0.9rem; color: var(--text-light); }
-#toggle-auth { color: var(--primary); cursor: pointer; font-weight: bold; text-decoration: underline; }
-#error-msg { color: #d90429; font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
+#auth-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+.switch-link { margin-top: 20px; font-size: 0.9rem; cursor: pointer; color: var(--text); text-decoration: underline; }
 
-/* --- NAVBAR --- */
+/* --- MAIN APP --- */
+#main-app { display: none; } 
+
+/* Navbar */
 #navbar {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 15px 30px; background: var(--white);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: sticky; top: 0; z-index: 100;
+    padding: 20px 30px; background: transparent;
 }
-.logo { display: flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: bold; color: var(--primary); }
+.logo { display: flex; align-items: center; gap: 8px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
 
-/* Profile Avatar & Dropdown */
-.user-profile { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.user-menu { display: flex; align-items: center; gap: 15px; }
 .avatar {
-    width: 40px; height: 40px; background: var(--secondary);
-    color: var(--primary); border-radius: 50%;
+    width: 40px; height: 40px; background: var(--primary);
+    color: white; border-radius: 50%;
     display: flex; justify-content: center; align-items: center;
     font-weight: bold; font-size: 1.2rem;
 }
-.dropdown {
-    display: none; position: absolute; top: 50px; right: 0;
-    background: white; padding: 15px; border-radius: 12px;
-    box-shadow: var(--shadow); min-width: 200px;
-    border: 1px solid var(--secondary);
-}
-.user-profile:hover .dropdown { display: block; }
 #logout-btn {
-    width: 100%; padding: 8px; margin-top: 10px;
-    background: var(--bg-color); border: none; color: var(--text-dark);
-    cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid var(--primary); color: var(--primary);
+    padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
+    font-weight: bold; font-size: 0.9rem;
 }
-#logout-btn:hover { background: #ffe5d9; }
+#logout-btn:hover { background: var(--primary); color: white; }
 
-/* --- INPUT AREA --- */
-.input-container { display: flex; justify-content: center; padding: 30px 20px; }
+/* Input Area */
+.input-container { display: flex; justify-content: center; padding: 20px; }
 .notebook-input {
     width: 100%; max-width: 600px; background: var(--white);
     padding: 20px; border-radius: 20px; box-shadow: var(--shadow);
+    border: 1px solid var(--secondary);
 }
 textarea {
-    width: 100%; height: 100px; border: none; resize: none;
-    font-size: 1.1rem; color: var(--text-dark); outline: none;
-    background: transparent;
+    width: 100%; height: 80px; border: none; resize: none;
+    font-size: 1.1rem; color: var(--text); outline: none;
+    background: transparent; margin-bottom: 10px;
 }
-.input-actions { display: flex; justify-content: flex-end; border-top: 1px solid var(--bg-color); padding-top: 10px; }
 #save-btn {
-    background: var(--primary); color: white; border: none;
-    padding: 10px 24px; border-radius: 20px; font-weight: bold;
-    cursor: pointer; display: flex; align-items: center; gap: 6px;
-    transition: transform 0.2s;
+    float: right; background: var(--primary); color: white; border: none;
+    padding: 10px 25px; border-radius: 50px; font-weight: bold;
+    display: flex; align-items: center; gap: 5px;
 }
-#save-btn:hover { transform: scale(1.05); }
+#save-btn:hover { background: var(--primary-hover); transform: scale(1.05); }
 
-/* --- NOTES GRID --- */
+/* Notes Grid */
 #notes-grid {
-    display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; padding-bottom: 60px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px;
 }
 .note-card {
-    width: 300px; background: var(--white); padding: 20px;
-    border-radius: 16px; box-shadow: var(--shadow);
-    display: flex; flex-direction: column; justify-content: space-between;
-    animation: popIn 0.4s ease; border-top: 4px solid var(--secondary);
+    width: 300px; background: var(--white); padding: 25px;
+    border-radius: 18px; box-shadow: var(--shadow);
+    border-top: 5px solid var(--secondary); position: relative;
+    animation: popIn 0.5s ease;
 }
-.note-content { font-size: 1rem; line-height: 1.5; color: var(--text-dark); white-space: pre-wrap; }
+.note-text { font-size: 1.1rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; margin-bottom: 20px; }
 .note-footer {
-    margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--bg-color);
+    border-top: 1px solid #f0f0f0; padding-top: 15px;
     display: flex; justify-content: space-between; align-items: center;
-    color: var(--text-light); font-size: 0.85rem;
+    color: #aaa; font-size: 0.85rem;
 }
-.delete-icon {
-    font-size: 1.2rem; color: var(--primary); cursor: pointer; transition: 0.2s;
-}
+.delete-icon { cursor: pointer; color: var(--primary); font-size: 1.2rem; transition: 0.2s; }
 .delete-icon:hover { color: #d90429; transform: scale(1.2); }
 
-@keyframes popIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
