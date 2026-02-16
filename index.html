@@ -22,6 +22,8 @@
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             
+            <p id="auth-error" class="error-msg"></p>
+
             <button id="auth-btn">Log In</button>
             <p class="switch-link" id="toggle-auth">I need to create an account</p>
         </div>
@@ -34,11 +36,15 @@
                 <span>SaveNote</span>
             </div>
             
-            <div class="user-menu">
+            <div class="user-menu-container">
                 <div class="avatar" id="user-avatar">U</div>
-                <button id="logout-btn" title="Log Out">
-                    <i class="ri-logout-box-r-line"></i> Logout
-                </button>
+                
+                <div id="profile-dropdown" class="dropdown hidden">
+                    <p id="user-email-display">user@email.com</p>
+                    <button id="logout-btn">
+                        <i class="ri-logout-box-r-line"></i> Logout
+                    </button>
+                </div>
             </div>
         </nav>
 
@@ -49,8 +55,7 @@
             </div>
         </div>
 
-        <div id="notes-grid">
-            </div>
+        <div id="notes-grid"></div>
     </div>
 
     <script src="script.js"></script>
