@@ -5,67 +5,268 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAVE NOTE</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="style.css">
-
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --bg-color: #fdf6f0;       
+            --primary: #e29578;        
+            --secondary: #ffcdb2;      
+            --text-dark: #4a4e69;      
+            --white: #ffffff;
+            --shadow: 0 10px 30px rgba(226, 149, 120, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Gill Sans', sans-serif; }
+        body { background-color: var(--bg-color); min-height: 100vh; color: var(--text-dark); }
+
+        /* Auth Screen */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .auth-box {
+            background: var(--white); padding: 40px; width: 90%; max-width: 380px;
+            border-radius: 24px; box-shadow: var(--shadow);
+            text-align: center; border: 2px solid var(--secondary);
+        }
+        .auth-box i { font-size: 3rem; color: var(--primary); margin-bottom: 10px; }
+        .auth-box input {
+            width: 100%; padding: 14px; margin: 10px 0;
+            border: 2px solid var(--secondary); border-radius: 12px;
+            outline: none; font-size: 1rem;
+        }
+        #auth-action-btn {
+            width: 100%; padding: 14px; background: var(--primary);
+            color: white; border: none; border-radius: 12px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        #auth-action-btn:hover { opacity: 0.9; }
+        .switch-mode { margin-top: 20px; font-size: 0.9rem; cursor: pointer; color: var(--primary); text-decoration: underline; }
+
+        /* Main App */
+        #main-app { display: none; } /* Hidden by default */
+        
+        #navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 30px; background: var(--white);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+        .logo { display: flex; align-items: center; gap: 8px; font-size: 1.4rem; font-weight: bold; color: var(--primary); }
+        .avatar {
+            width: 40px; height: 40px; background: var(--secondary);
+            color: var(--primary); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; cursor: pointer;
+        }
+        
+        .input-container { display: flex; justify-content: center; padding: 30px 20px; }
+        .notebook-input {
+            width: 100%; max-width: 600px; background: var(--white);
+            padding: 20px; border-radius: 20px; box-shadow: var(--shadow);
+        }
+        textarea {
+            width: 100%; height: 100px; border: none; resize: none;
+            font-size: 1.1rem; color: var(--text-dark); outline: none;
+        }
+        #save-btn {
+            float: right; background: var(--primary); color: white; border: none;
+            padding: 10px 24px; border-radius: 20px; font-weight: bold; cursor: pointer;
+        }
+
+        #notes-grid {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px;
+        }
+        .note-card {
+            width: 300px; background: var(--white); padding: 20px;
+            border-radius: 16px; box-shadow: var(--shadow);
+            border-top: 4px solid var(--secondary); position: relative;
+        }
+        .note-footer {
+            margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;
+            display: flex; justify-content: space-between; color: #999; font-size: 0.8rem;
+        }
+        .delete-icon { cursor: pointer; color: var(--primary); font-size: 1.2rem; }
+    </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-box">
-            <div class="auth-header">
-                <i class="ri-heart-3-fill"></i>
-                <h2 id="auth-title">Welcome Back</h2>
-            </div>
-            <p id="auth-subtitle">Login to access your secret diary.</p>
+            <i class="ri-heart-3-fill"></i>
+            <h2 id="auth-title">Welcome Back</h2>
+            <p id="auth-subtitle">Enter your details to login.</p>
             
-            <input type="email" id="email" placeholder="Email Address">
-            <input type="password" id="password" placeholder="Password (6+ chars)">
+            <input type="email" id="email" placeholder="Email (e.g., test@test.com)">
+            <input type="password" id="password" placeholder="Password (6+ characters)">
             
             <button id="auth-action-btn">Log In</button>
             
-            <div class="switch-mode">
-                <p>New here? <span id="toggle-auth">Create an account</span></p>
-            </div>
-            <p id="error-msg"></p>
+            <p class="switch-mode" id="toggle-auth">Create an account instead</p>
         </div>
     </div>
 
-    <div id="main-app" style="display: none;">
+    <div id="main-app">
         <nav id="navbar">
             <div class="logo">
                 <i class="ri-book-heart-fill"></i>
                 <span>SaveNote</span>
             </div>
-            
-            <div class="user-profile">
-                <div class="avatar" id="user-avatar">U</div>
-                <div class="dropdown">
-                    <p id="user-email-display">user@email.com</p>
-                    <button id="logout-btn">
-                        <i class="ri-logout-box-r-line"></i> Logout
-                    </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="user-email-display" style="font-size: 0.9rem;"></span>
+                <div class="avatar" id="logout-btn">
+                    <i class="ri-logout-box-r-line"></i>
                 </div>
             </div>
         </nav>
 
         <div class="input-container">
             <div class="notebook-input">
-                <textarea id="note-text" placeholder="Dear Diary, today I..."></textarea>
-                <div class="input-actions">
-                    <button id="save-btn">
-                        <i class="ri-save-heart-line"></i> Save Memory
-                    </button>
-                </div>
+                <textarea id="note-text" placeholder="Dear Diary..."></textarea>
+                <button id="save-btn">Save Note</button>
             </div>
         </div>
 
-        <div id="notes-grid">
-            </div>
+        <div id="notes-grid"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // 1. CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwt0DhSHWkQUHMFrcanpDg9270v8IcpV8",
+            authDomain: "save-note-146ec.firebaseapp.com",
+            projectId: "save-note-146ec",
+            storageBucket: "save-note-146ec.firebasestorage.app",
+            messagingSenderId: "1015048681656",
+            appId: "1:1015048681656:web:ebff97743021c3dd65dc4d",
+            measurementId: "G-VEMRQ2Y53E"
+        };
+
+        // Initialize Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase Connected");
+        } catch (e) {
+            alert("Error connecting to Firebase: " + e.message);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 2. VARIABLES
+        let isLoginMode = true;
+
+        // 3. AUTHENTICATION LOGIC
+        const toggleBtn = document.getElementById("toggle-auth");
+        const actionBtn = document.getElementById("auth-action-btn");
+        const title = document.getElementById("auth-title");
+
+        toggleBtn.addEventListener("click", () => {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                title.innerText = "Welcome Back";
+                actionBtn.innerText = "Log In";
+                toggleBtn.innerText = "Create an account instead";
+            } else {
+                title.innerText = "Join Us";
+                actionBtn.innerText = "Sign Up";
+                toggleBtn.innerText = "I already have an account";
+            }
+        });
+
+        actionBtn.addEventListener("click", () => {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            if(password.length < 6) {
+                alert("Password must be at least 6 characters!");
+                return;
+            }
+
+            if (isLoginMode) {
+                auth.signInWithEmailAndPassword(email, password)
+                    .catch((error) => alert("Login Failed: " + error.message));
+            } else {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .catch((error) => alert("Signup Failed: " + error.message));
+            }
+        });
+
+        // 4. MONITOR LOGIN STATE
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById("auth-overlay").style.display = "none";
+                document.getElementById("main-app").style.display = "block";
+                document.getElementById("user-email-display").innerText = user.email;
+                loadNotes(user.uid);
+            } else {
+                document.getElementById("auth-overlay").style.display = "flex";
+                document.getElementById("main-app").style.display = "none";
+            }
+        });
+
+        document.getElementById("logout-btn").addEventListener("click", () => {
+            auth.signOut();
+            location.reload(); // Refresh page on logout to be clean
+        });
+
+        // 5. NOTES LOGIC
+        document.getElementById("save-btn").addEventListener("click", () => {
+            const text = document.getElementById("note-text").value;
+            const user = auth.currentUser;
+
+            if (text.trim() === "") return;
+
+            db.collection("notes").add({
+                text: text,
+                uid: user.uid,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                document.getElementById("note-text").value = "";
+            }).catch((error) => alert("Error saving note: " + error.message));
+        });
+
+        function loadNotes(userId) {
+            db.collection("notes")
+              .where("uid", "==", userId)
+              .orderBy("timestamp", "desc")
+              .onSnapshot((snapshot) => {
+                  const grid = document.getElementById("notes-grid");
+                  grid.innerHTML = ""; 
+
+                  snapshot.forEach((doc) => {
+                      const data = doc.data();
+                      const noteId = doc.id;
+                      let time = "Just now";
+                      if(data.timestamp) time = data.timestamp.toDate().toLocaleDateString();
+
+                      const card = document.createElement("div");
+                      card.className = "note-card";
+                      card.innerHTML = `
+                          <div style="font-size: 1.1rem; line-height: 1.5; white-space: pre-wrap;">${data.text}</div>
+                          <div class="note-footer">
+                              <span>${time}</span>
+                              <i class="ri-delete-bin-line delete-icon" onclick="deleteNote('${noteId}')"></i>
+                          </div>
+                      `;
+                      grid.appendChild(card);
+                  });
+              });
+        }
+
+        // Global Delete Function
+        window.deleteNote = function(noteId) {
+            if(confirm("Delete this note?")) {
+                db.collection("notes").doc(noteId).delete();
+            }
+        };
+    </script>
 </body>
 </html>
